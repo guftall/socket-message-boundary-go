@@ -83,8 +83,11 @@ func (p *Packager) startReceiving() {
 					p.close()
 					return
 				}
+				if p.currentPacket.State == common.Size {
+					// state is still size, so we should cache frame
 
-				if p.currentPacket.State == common.Data {
+					p.lastFrame = frame
+				} else if p.currentPacket.State == common.Data {
 					log.Printf("packet (%p) size calculated: %d\n", p.currentPacket, p.currentPacket.Size)
 
 					// if length of packet exceeds MAX value, close connection
@@ -131,8 +134,7 @@ func (p *Packager) fillCurrentPacketSize(f *common.Frame) error {
 	}
 
 	if f.Data.Len() == 1 {
-		log.Printf("packet(%p) size not can't be calculated yet\n", p.currentPacket)
-		p.lastFrame = f
+		log.Printf("packet(%p) size can't be calculated yet\n", p.currentPacket)
 		b, _ := f.Data.ReadByte()
 
 		// b is most singnificant byte
