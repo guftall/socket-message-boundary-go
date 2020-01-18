@@ -97,7 +97,7 @@ func (p *Packager) startReceiving() {
 			}
 
 			if p.currentPacket.State == common.Data {
-				p.fillCurrentPacketData(frame)
+				fillCurrentPacketData(p.currentPacket, frame)
 			}
 
 			if p.currentPacket.State == common.Complete {
@@ -148,10 +148,11 @@ func (p *Packager) fillCurrentPacketSize(f *common.Frame) error {
 	return nil
 }
 
-func (p *Packager) fillCurrentPacketData(f *common.Frame) {
-	if len(p.currentPacket.Data) == int(p.currentPacket.Size) || f.Data.Len() == 0 {
+func fillCurrentPacketData(pkt *common.Packet, f *common.Frame) {
+	if len(pkt.Data) == int(pkt.Size) || f.Data.Len() == 0 {
 		return
 	}
+	remaining := int(pkt.Size) - len(pkt.Data)
 
 	remaining := int(p.currentPacket.Size) - len(p.currentPacket.Data)
 
@@ -165,12 +166,11 @@ func (p *Packager) fillCurrentPacketData(f *common.Frame) {
 
 		f.Data.Read(slice)
 
-		p.currentPacket.Data = append(p.currentPacket.Data, slice...)
+		pkt.Data = append(pkt.Data, sli...)
 
-		p.currentPacket.State = common.Complete
+		pkt.State = common.Complete
 	} else {
-		log.Printf("packet(%p) not completed by frame(%p), wait for next frame", p.currentPacket, f)
-		p.lastFrame = f
+		log.Printf("packet(%p) not completed by frame(%p), wait for next frame", pkt, f)
 
 		// means packet remaining bytes are more than this frame, so read all frame data and append them to
 		// current packet
@@ -178,7 +178,7 @@ func (p *Packager) fillCurrentPacketData(f *common.Frame) {
 
 		// we read remaining bytes to slice variable, so discard all remaining bytes
 		f.Data.Truncate(0)
-		p.currentPacket.Data = append(p.currentPacket.Data, slice...)
+		pkt.Data = append(pkt.Data, slice...)
 	}
 }
 
