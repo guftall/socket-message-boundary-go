@@ -156,17 +156,15 @@ func fillCurrentPacketData(pkt *common.Packet, f *common.Frame) {
 	}
 	remaining := int(pkt.Size) - len(pkt.Data)
 
-	remaining := int(p.currentPacket.Size) - len(p.currentPacket.Data)
-
 	count := remaining - f.Data.Len()
 
 	if count <= 0 {
 		// so all remaining data is in current frame
 
 		log.Printf("read remaining packet data(%d byte) from frame\n", remaining)
-		slice := make([]byte, remaining, remaining)
 
-		f.Data.Read(slice)
+		sli := f.Data.Bytes()[0:remaining]
+		f.Data.Truncate(0)
 
 		pkt.Data = append(pkt.Data, sli...)
 
